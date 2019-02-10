@@ -1,0 +1,65 @@
+---
+layout: post
+title: Monitoring Splunk met Nagios
+date: 2010-02-14 21:13:22.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- nagios
+- splunk
+meta:
+  has_been_twittered: 'yes'
+  _edit_last: '1'
+  views: '1932'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Sinds een tijdje ben ik (weer) aan het spelen met Splunk. Waarom weet ik nog niet, maar inmiddels is Splunk al twee keer gecrashed. Om dit beter in de gaten te kunnen houden heb ik een simpele Nagios check geschreven.</p>
+<blockquote><p>
+cat check_nagios.pl</p>
+<p>#!/usr/bin/perl</p>
+<p>use strict;<br />
+use warnings;<br />
+use diagnostics;</p>
+<p># exit code 0, if the test was okay = green<br />
+# exit code 1 means warning = yellow<br />
+# exit code 2 means critical = red<br />
+# exit code 3 means unknown = orange.</p>
+<p>my $input_command = "sudo /opt/splunk/bin/splunk status";</p>
+<p>open(PIPE, "${input_command} |");</p>
+<p>my $count;</p>
+<p>while(my $line =
+<pipe>) {<br />
+        chomp($line);</p>
+<p>        if ( ${line} =~ m/splunkd\sis\srunning/ ) {<br />
+                $count++;<br />
+        } elsif ( ${line} =~ m/splunkweb\sis\srunning/ ) {<br />
+                $count++;<br />
+        } elsif ( ${line} =~ m/splunk\shelpers\sare\srunning/ ) {<br />
+                $count++;<br />
+        } else {<br />
+                print "Unknown output from ${input_command}\n$line\n";<br />
+                exit(1);<br />
+        }<br />
+}<br />
+close(PIPE);</p>
+<p>if ( ${count} eq 3 ) {<br />
+        print "All splunk parts are running\n";<br />
+        exit(0);<br />
+} else {<br />
+        print "Not all splunk parts are running!!\n";<br />
+        exit(2);<br />
+}
+</pipe></blockquote>
+<p>Dit perl script heb ik in NRPE gezet, zodat ik vanaf mijn Nagios server, dit script kan uitvoeren.</p>
+<blockquote><p>command[check_splunk]=/usr/local/sbin/check_splunk.pl</p></blockquote>
+<p>Aangezien de nrpe daemon niet door root wordt uitgevoerd, heb ik via sudo de rechten aan Nagios gegeven om de splunk binarie aan te roepen.</p>

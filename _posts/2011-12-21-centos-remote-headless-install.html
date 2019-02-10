@@ -1,0 +1,53 @@
+---
+layout: post
+title: CentOS remote headless install
+date: 2011-12-21 14:00:45.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- centos
+- headless install
+- redhat
+meta:
+  _edit_last: '1'
+  views: '2795'
+  has_been_twittered: 'yes'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Soms is het nodig om een systeem op afstand te herinstalleren zonder dat je toegang hebt tot het console, bijvoorbeeld als jouw systeem in een datacenter hangt aan de andere kant van het land. Ik verwacht dit binnenkort nodig te gaan hebben bij een hoster die gebruik maakt van een eigen kernel, waar ik geen gebruik van wil maken en dus een schone installatie wil doen.</p>
+<p>CentOS en dus Red Hat, Fedora, Scientific Linux, e.d., gebruiken Anaconda als installatie programma en deze kan gebruik maken van VNC, dus het principe is simpel. Boot met de installatie kernel en geef aan dat je gebruik wilt maken van VNC, zodat je vanaf een remote locatie contact kunt maken met de VNC server die door Anaconda is gestart, om de installatie af te maken.</p>
+<p><em>Uiteraard is het ook mogelijk om gebruik te maken van een kickstart file, zodat de hele installatie 'unattended' zal, maar dat gaat voor dit doel een beetje te ver.</em></p>
+<h2></h2>
+<h2>Download installatie kernel</h2>
+<p>Log in op het systeem die je opnieuw wilt installeren en voorzie deze van de installatie kernel</p>
+<pre>mkdir /boot/netimage
+wget -P /boot/netimage http://mirror.centos.org/centos/6.2/os/x86_64/isolinux/vmlinuz
+wget -P /boot/netimage http://mirror.centos.org/centos/6.2/os/x86_64/isolinux/initrd.img</pre>
+<h2></h2>
+<h2>Pas de bootloader aan</h2>
+<p>Nu moet de installatie kernel toegevoegd worden aan de (Grub) bootloader. Dit kun je het beste met het commando grubby doen, die zorgt voor de juiste formattering en zal ook de padnamen aanpassen aan de lokale situatie. Gebruik je grubby niet, let er dan in ieder geval op dat indien je /boot op een aparte partitie hebt, je de kernel-bestanden aanwijst als /netimage/vmlinuz en /netimage/initrd.img, dus zonder /boot er voor.</p>
+<pre>grubby --add-kernel=/boot/netimage/vmlinuz --initrd=/boot/netimage/initrd.img --args="ip=10.0.0.116 netmask=255.255.255.0 gateway=10.0.0.1 dns=8.8.8.8 ksdevice=eth0 repo=http://mirror.centos.org/centos/6.2/os/x86_64/ headless lang=en_US keymap=us vnc vncpassword=foobar" --title="CentOS 6.2 VNC install"</pre>
+<p>Het ip adres, netmask en de gateway dien je uiteraard aan te passen aan je eigen situatie. Voor de duidelijkheid, deze gegevens neem je over van het draaiende systeem!</p>
+<p>De dns server 8.8.8.8 is de Google publieke DNS server, deze kun je aanpassen naar eigen wens, maar is dus niet nodig.</p>
+<p>Het VNC wachtwoord is niet nodig maar ik raad je wel aan om deze te gebruiken. Er zal maar een of andere grapjas je installatie overnemen en de boel vernaggelen.</p>
+<h2></h2>
+<h2>Bereid volgende boot voor</h2>
+<p>Grub kent een leuk grapje waarbij je eenmalig de default kernel aan kunt passen. Dat houdt dus in dat indien er onverhoopt iets mis gaan bij het booten van de installatie kernel, je met een reboot (powercycle) het systeem weer laat booten van de normale kernel.</p>
+<p>De volgende commando's regelen dit voor je. GRUBINDEX levert dus de positie op van de installatie kernel in de grub config.</p>
+<pre>GRUBINDEX=$(grubby --info=/boot/netimage/vmlinuz|awk -F\= '$1 ~ /^index/ {print $2}')
+echo "savedefault --stage2=/boot/grub/stage2 --default=${GRUBINDEX} --once" | grub --batch</pre>
+<h2></h2>
+<h2>Reboot!</h2>
+<p>Na de reboot zal je systeem booten van de installatie kernel en via http://mirror.centos.org/centos/6.2/os/x86_64/ de installatie image (install.img = 129MB) ophalen. Zodra deze binnen is zal de grafische installatie gestart worden en pas van dit moment kun je met VNC connecten op 10.0.0.116:1 (:1 is gelijk aan poort 5901) om de installatie af te maken.</p>
+<p>Voor dat je dit remote gaat doen, is het trouwens verstandig om dit een paar keer te testen op een (lokaal) systeem waar je wel het scherm van kunt zien tijdens de boot. Zo kun je een en ander finetunen en ervaring krijgen met dit bootproces. Deze handleiding heb ik geschreven door gebruik te maken van virtuele (KVM) hosts.</p>
+<p>&nbsp;</p>

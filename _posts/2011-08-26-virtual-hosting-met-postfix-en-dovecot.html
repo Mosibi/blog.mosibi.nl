@@ -1,0 +1,92 @@
+---
+layout: post
+title: Virtual hosting met Postfix en Dovecot
+date: 2011-08-26 17:06:26.000000000 +02:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- dovecot
+- imaps
+- postfix
+- virtual
+meta:
+  _edit_last: '1'
+  views: '3517'
+  has_been_twittered: 'yes'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Mijn mailserver is nodig aan vervanging toe en zoals ook voor mijn andere machines geldt, wordt ook deze voorzien van Centos in verband mijn aanloop naar het RHCA zijn.</p>
+<p>In de nieuwe setup wilde ik geen gebruik meer maken van LDAP, dat heb ik jaren gedaan, maar gewoon simpel van configuratie bestanden, daar heb ik met mijn paar domeintjes ruim voldoende aan. De uiteindelijke aflevering van de email in de juiste box, laat ik over aan het 'deliver' programma van Dovecot, zodat ik in de toekomst ook de filtering daarvan kan gaan gebruiken.</p>
+<h2>Postfix</h2>
+<p>De wijzigingen (toevoegingen in dit geval) aan /etc/postfix/main.cf zijn minimaal:</p>
+<blockquote><p><em>1</em> virtual_minimum_uid = 500<br />
+<em>2</em> virtual_uid_maps = static:500<br />
+<em>3</em> virtual_gid_maps = static:500<br />
+<em>4</em> virtual_mailbox_domains = hash:/etc/postfix/vdomains<br />
+<em>5</em> virtual_transport = dovecot:<br />
+<em>6</em> transport_maps = hash:/etc/postfix/transport<br />
+<em>7</em> virtual_mailbox_maps = hash:/etc/postfix/vmailbox<br />
+<em>8</em> virtual_alias_maps = hash:/etc/postfix/virtual
+</p></blockquote>
+<p>Op regel 1 zie je virtual_minimum_uid staan. Dit is fallback methode van Postfix, mocht er ergens een fout gemaakt zijn, dan zal er nooit een lager UID dan 500 gebruikt worden.</p>
+<p>Regel 2 en 3 (virtual_uid_maps, virtual_gid_maps) geven aan hoe de mapping van de UID en GID informatie moet geschieden. Omdat ik gebruik maak van virtual hosting en dus de gebruikers geen entry in /etc/passwd hebben, dienen we postfix te vertellen welk UID en GID we willen gebruiken. Ik maak gebruik van UID en GID 500, welke ik koppel aan de gebruiker vmail. Deze gebruiker dient ook aangemaakt te worden:</p>
+<p><code>groupadd -g 500 vmail</code><br />
+<code>adduser -c 'Virtual Mail User' -d /var/vmail -M -g 500 -u 500 -s /sbin/nologin vmail</code></p>
+<p>Met regel 4 (virtual_mailbox_domains) geef ik aan welke domeinen ik als virtueel beschouw. Ik neem hier alle domeinen in op, ook degene waarvoor ik alleen maar backup MX ben en via virtual_transport (regel 5) vertel ik Postfix welke manier van aflevering (transport) ik voor deze domeinen wil. Met transport_maps (regel 6) kan in de default waarde die gezet is met virtual_transport overrulen, dat gebruik ik voor de domeinen waarvoor ik MX backup ben.</p>
+<p>De optie virtual_mailbox_maps op regel 7 koppelt een email adres aan een mailbox (directory of bestand) op het systeem. Normaal gesproken vertel je Postfix hiermee in welke directory er geschreven dient te worden, maar aangezien ik het programma deliver van Dovecot gebruik, hoef ik hierin alleen maar de email adressen te specificeren. Het tweede veld verwacht Postfix wel, dus daar kunnen we dummy info plaatsen.</p>
+<p>Met virtual_alias_maps ( regel 8 ) koppel je een email adres aan een andere. Postfix geeft aan dat je hier nooit een wildcard domein in op moet nemen, uiteraard vanwege spam redenen, ik gebruik dat voor 1 van mijn domeinen wel, maar daar heb ik dan ook goede redenen voor.</p>
+<p>De hash tables die aangemaakt dienen te worden, zie je hieronder staan. Waar 'dummy' staat, verwacht Postfix informatie die in deze situatie niet nodig is. Vergeet niet om na iedere wijziging een 'postmap $bestandsnaam' te doen.</p>
+<blockquote><p>/etc/postfix/vdomains<br />
+domain1 dummy<br />
+domain2 dummy</p></blockquote>
+<blockquote><p>/etc/postfix/transport<br />
+friends_domain.nl relay<br />
+.friends_domain.nl relay</p></blockquote>
+<blockquote><p>/etc/postfix/vmailbox<br />
+user1@domain1.nl dummy<br />
+user2@domain1.nl dummy</p></blockquote>
+<blockquote><p>/etc/postfix/virtual<br />
+alias1@domain1.nl address1@domain1.nl<br />
+alias2@domain1.nl address1@domain1.nl, address2@domain1.nl<br />
+@domain2.nl address1@domain1.nl</p></blockquote>
+<p>Verschillende keren heb ik in bovenstaande tekst het programma deliver genoemd van Dovecot. Postfix kent deze standaard niet als LDA (local delivery agent), daarvoor moet aan /etc/postfix/master.cf het volgende worden toegevoegd:</p>
+<blockquote><p>dovecot unix - n n - - pipe<br />
+flags=DRhu user=vmail:vmail argv=/usr/libexec/dovecot/deliver -f ${sender} -d ${recipient}</p></blockquote>
+<h2>Dovecot</h2>
+<p>De Dovecot configuratie zoals ik hem op dit moment gebruik is alleen voor het afleveren van de email in de juiste mailbox, vandaar dat /etc/dovecot/dovecot.conf er nog minimaal uitziet. In een later stadium ga ik hier onder andere nog SSL aan toevoegen, zoals gezegd, dat heb ik nu nog niet nodig.</p>
+<blockquote><p>ssl = no<br />
+protocols = imap<br />
+mail_location = maildir:/var/vmail/domains/%d/%n<br />
+service auth {<br />
+unix_listener auth-userdb {<br />
+mode = 0600<br />
+user = vmail<br />
+group = vmail<br />
+}<br />
+}<br />
+passdb {<br />
+driver = passwd-file<br />
+args = /etc/dovecot/imapusers<br />
+}<br />
+userdb {<br />
+driver = static<br />
+args = uid=vmail gid=vmail home=/var/vmail/domains/%d/%n<br />
+}</p></blockquote>
+<p>In het bestand /etc/dovecot/imapusers staan de gebruikers met hun wachtwoord. Het is mogelijk om daarin mee informatie zoals GECOS en dergelijk op te nemen, maar ook hier geldt weer dat ik dat in mijn situatie niet nodig heb.</p>
+<blockquote><p>/etc/dovecot/imapusers<br />
+user1@domain1.nl:{DIGEST-MD5}0000aa0000aa0a000aa0a000aa00aa0a<br />
+user2@domain1.nl:{DIGEST-MD5}1111bb1111bb1b111bb1b111bb11bb1b</p></blockquote>
+<h2>Selinux</h2>
+<p>Om Dovecot's deliver te mogen laten schrijven in /var/vmail/, moet de Selinux verteld worden wat de juiste context is voor /var/vmail.</p>
+<p><code>/usr/sbin/semanage fcontext -a -t mail_spool_t '/var/vmail(/.*)?'</code></p>
+<p>Hierna is een <code>restorecon -R /var/vmail</code> nodig om een en ander juist te zetten. Mocht je ooit zelf in deze directory iets aanpassen, herhaal dan het restorecon commando.</p>

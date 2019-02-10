@@ -1,0 +1,53 @@
+---
+layout: post
+title: iPhone OS fingerprinting
+date: 2009-12-27 15:03:13.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- iPhone
+- Unix
+tags:
+- imaps
+- iPhone
+- os fiingerprint
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  views: '2015'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p><strong>Probleem</strong></p>
+<p>Ik wil overal ter wereld mijn mail kunnen lezen, die via IMAPS door mijn mailserver beschikbaar wordt gesteld. Nu kan ik poort 993 open zetten voor de hele wereld, maar dat is ook weer zo... open :)</p>
+<p><strong>Oplossing</strong></p>
+<p>Op mijn FreeBSD firewall, die voorzien is van PF van OpenBSD, maak ik een regel aan die alleen toegang geeft aan iemand met een iPhone. PF heeft een prachtige optie, '<a href="http://www.openbsd.org/faq/pf/filter.html#osfp" target="_blank">Passive Operating System Fingerprinting</a>', die dit mogelijk maakt.</p>
+<p><strong>Uitwerking</strong></p>
+<p>Bij PF wordt een pf.os bestand meegeleverd die door pf gesourced wordt bij het starten. In dit bestand staan de bekende OS fingerprints. Helaas staat hier geen iPhone, dus moet ik eerst de fingerprint van mijn iPhone uitzoeken. De manualpage van pf.os beschrijft hoe een fingerprint wordt opgebouwd en leert mij ook dat ik met de opdracht <em>tcpdump -s128 -nv 'tcp[13] == 2' and port 993</em> de gevraagde informatie zichtbaar kan maken. Door vanaf mijn iPhone de mail op te halen, kreeg ik de volgende output:</p>
+<blockquote><p>14:08:10.048578 IP (tos 0x20, ttl 48, id 61345, offset 0, flags [DF], proto TCP (6), length 64) xx.xx.xx.xx.7854 &gt; xx.xx.xx.xx.993: S, cksum 0x15c7 (correct), 1069626058:1069626058(0) win 65535 &lt;mss 1360,nop,wscale 2,nop,nop,timestamp 840340694 0,sackOK,eol&gt;</p></blockquote>
+<p>Volgens de pf.os manpage moet ik hier de volgende velden uit kunnen halen:</p>
+<blockquote><p>window: The TCP window size.<br />
+TTL: The IP time to live.<br />
+df: The presence of the IPv4 don't fragment bit.<br />
+packet size: The size of the initial TCP packet.<br />
+TCP options: An ordered list of the TCP options.</p></blockquote>
+<p>Om de fingerprint compleet te maken, moet ik er dan zelf nog de volgende informatie aan toevoegen:</p>
+<blockquote><p>class: The class of operating system.<br />
+version: The version of the operating system.<br />
+subtype: The subtype of patchlevel of the operating system.<br />
+description: The overall textual description of the operating system, version and subtype.</p></blockquote>
+<p>Nu ik alle informatie beschikbaar had, kon ik daar de volgende regel voor in het bestand pf.os van maken:</p>
+<blockquote><p>65535:48:1:64:M1360:Darwin iPhone:10.0.0d3::iPhone 3.1.2</p></blockquote>
+<p>Nadat ik deze had toegevoegd werd met <em>pfctl -s osfp </em>duidelijk dat ik dan moest gaan filteren op Darwin iPhone. In mijn firewall staan nu dus de volgende regels voor IMAPS</p>
+<blockquote><p>rdr on $ext_if proto tcp from any to any port 993 -&gt; $mailserver port 993<br />
+pass in on $ext_if proto tcp from any os "Darwin iPhone   10.0.0d3" to $mailserver port 993 flags S/SA keep state</p></blockquote>
+<p>Ik ben mij er van bewust dat ik op deze manier alle iPhone's met firmware 3.1.2 toegang geef tot mijn IMAPS server, maar dat is voor mij een geaccepteerd risico. Uiteraard dien ik ook bij een firmware upgrade te controleren of de fingerprint gewijzigd is.</p>
+<p>Update 29-12-2009<br />
+Helaas bleek deze vorm van filtering toch niet stabiel. De ene keer werkte het wel, de andere keer ineens weer niet. Ik heb er inmiddels vele uren ingestoken om uit te zoeken wat er nu precies fout gaat, maar tot nu toe heb ik het helaas niet voor elkaar gekregen. Ik heb daarom ook besloten om te stoppen met zoeken en de draad weer op te pakken na een upgrade van mijn firewall. </p>

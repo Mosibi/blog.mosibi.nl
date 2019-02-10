@@ -1,0 +1,31 @@
+---
+layout: post
+title: Gas meter update
+date: 2013-01-01 17:59:09.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Domotica
+tags:
+- arduino
+- gasmeter
+- IN-Z31
+meta:
+  _edit_last: '1'
+  views: '8321'
+  has_been_twittered: 'yes'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Yesterday I <a href="http://127.0.0.1:8080/?p=676">blogged</a> about getting information from our gas meter with an Arduino that reads the reed switch. After using this setup for many hours, we noticed that our counter was not accurate. My first suspect was the IN-Z31 reed switch, it looked like the switch sometimes stayed closed for a very long time. To get more information, I changed the code so that when the sensor port changes to HIGH (1), I start an other function that checks for how long (in milliseconds) the switch stays closed.</p>
+<p>Luckily, soon after changing the code and monitoring the serial (debugging) output,  the gas meter stopped exactly at the digit 9 and the CountStateDuration() function showed me that the switch stayed closed. Yesterday we already noticed that we got a pulse every time when the digit 9 was shown, so that the switch stayed closed at 9, was not a very big surprise.</p>
+<p>Now we learned that, I modified the code. In the loop() it calls the function CheckSwitch() which returns a 0 if the switch is open (not making contact). If the switch is closed, thus making contact, the function CountStateDuration() is called to check how long the switch is closed. This function returns when the switch is open again, resulting in a counter update.</p>
+<p>The LCD screen now shows the real counter, but to get that right, you need to set the current reading before starting the Arduino. The new code can be <a href="{{ site.baseurl }}/assets/gasmeter_PS.pde" target="_blank">downloaded here</a>.</p>
+<p><a href="http://127.0.0.1:8080/?attachment_id=694" rel="attachment wp-att-694"><img class="alignnone size-medium wp-image-694" alt="arduino_01012013" src="{{ site.baseurl }}/assets/arduino_01012013-300x258.png" width="300" height="258" /></a></p>

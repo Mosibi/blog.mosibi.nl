@@ -1,0 +1,30 @@
+---
+layout: post
+title: Webserver gemigreerd naar Ubuntu
+date: 2009-11-22 14:00:05.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- ubuntu
+meta:
+  has_been_twittered: 'yes'
+  _edit_last: '1'
+  views: '1775'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Vorige week merkte ik problemen met mijn webserver, het filesysteem was op de een of andere manier corrupt geraakt. Dit had ik al eens eerder meegemaakt, het gaat om een virtuele FreeBSD server, en dan installeerde ik altijd een schone virtuele server en applicaties en rolde de backup er op uit. Meestal was ik dan redelijk snel weer up- and running.</p>
+<p>Nu was ik begonnen aan het installeren van de nieuwe webserver met FreeBSD als OS, toen ik besloot om het deze keer eens anders aan te pakken en voor Ubuntu Server (9.10) te kiezen. Waarom?? Omdat het kan :)</p>
+<p>De installatie van software op Ubuntu gaat lekker snel, aangezien je voornamelijk met binaries werkt en dus niet hoeft te compileren. Daardoor had ik de nieuwe webserver snel up- and running voor de sites die van buiten (internet) beschikbaar zijn. De interne sites zoals o.a. Nagios en Cacti kostten meer tijd, Cacti draait inmiddels maar Nagios nog niet. Nagios heb ik meteen geupgrade naar versie 3, aangezien deze standaard bij Ubuntu wordt meegeleverd, maar die is niet compatible met Fruity, de webgui die ik gebruikte voor de Nagios configuratie.</p>
+<p>Nu blijkt dat Fruity inmiddels anders is gaan heten, namelijk <a href="http://www.lilacplatform.com/" target="_blank">Lilac</a>, en nu ook Nagios3 ondersteund. Migratie van mijn oude configuratie blijkt echter niet lekker te gaan, dus die moet ik weer zo zachtjes aan bij elkaar gaan klikken in <a href="http://www.lilacplatform.com/" target="_blank">Lilac</a>. Ach,  houdt je van de straat :)</p>
+<p>Tot nu toe bevalt Ubuntu Server 9.10 in ieder geval, hopelijk is dat over 6 maanden nog steeds zo..</p>
+<p><img class="alignnone size-full wp-image-318" title="ubuntu_logo" src="{{ site.baseurl }}/assets/ubuntu_logo.png" alt="ubuntu_logo" width="202" height="55" /></p>

@@ -1,0 +1,100 @@
+---
+layout: post
+title: Dovecot met LDAP (jamm) en SSL (imaps)
+date: 2011-02-06 16:31:19.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- centos
+- dovecot
+- imap
+- imaps
+- jamm
+- ldap
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  _wp_old_slug: ''
+  views: '3492'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Ik gebruik al langere tijd FreeBSD voor al mijn thuis servers. Echter zakelijk kom ik FreeBSD niet zo vaak tegen, echter Red Hat Enterprise Linux en aanverwanten wel. Vorig jaar heb ik besloten om mezelf te gaan certificeren voor Red Hat en heb RHCE gehaald. Nu ben ik voorzichtig aan het kijken om misschien zelfs voor RHCA te gaan.</p>
+<p>Om nog vaker met RHEL systemen te werken, worden steeds meer van mijn FreeBSD machines vervangen door Centos systemen. Binnenkort zal mijn huidige FreeBSD mailserver daarom ook vervangen worden door een Centos systeem. Ter voorbereiding daarop heb ik alvast uitgezocht hoe ik Dovecot (imaps) laat samenwerken met mijn huidige mailstorage omgeving, waarbij authenticatie gegevens in LDAP staan en ik gebruik heb gemaakt van het <a href="http://jamm.sourceforge.net/" target="_blank">Jamm</a> schema.</p>
+<p>Voor IMAPS maak ik gebruik van certificaten die gesigned zijn door <a href="http://cacert.org" target="_blank">cacert.org</a>. Deze Certificate Authority werkt met een methode 'Web of trust' die soortgelijk is aan de methode waarop bijvoorbeeld PGP/GPG key signing werkt. Uiteraard kun je er ook voor kiezen om je certificaten van een andere partij te betrekken of te werken met 'self signed' certificaten.</p>
+<p>Voordat we aan de slag kunnen, moeten er eerst wat packages geïnstalleerd worden:</p>
+<blockquote><p>sudo yum -y install dovecot openssl</p></blockquote>
+<p>Voor het verkrijgen van een door CAcert gesigned certificaat, moet je een 'signing request' (CSR) aanmaken. Een CSR maak je aan voor een door jezelf gegeneerde RSA private key. Normaal gesproken moet je dus met het openssl commando eerst een RSA KEY aanmaken en dan een CSR. Dit is allemaal best wel lastig, gelukkig is het bij RHEL systemen erg simpel gemaakt:</p>
+<blockquote><p>cd /etc/pki/tls/certs<br />
+make dovecot.csr</p>
+<p><strong>(Vul bij CommonName de volledige naam (fqdn) in van jouw systeem, dus bijvoorbeeld: imapserver.example.com)</strong></p></blockquote>
+<p>Ga hierna naar <a href="https://secure.cacert.org/account.php?id=10" target="_blank">https://secure.cacert.org/account.php?id=10</a> en plak de inhoud van dovecot.csr in het formulier. Laat het certificaat type op <a href="http://wiki.cacert.org/FAQ/TechnicalQuestions#CAcert_Class_3_certificates" target="_blank">Class 3</a> staan. Na wat klikken komt er uiteindelijk een prachtig gesigned certificaat, plak de inhoudt hiervan in dovecot.crt. Je krijgt ook een email van CAcert met de link naar jouw nieuwe certificaat. Je hebt ook het Class 3 root certificaat nodig van CAcert. download deze van <a href="http://www.cacert.org/certs/class3.crt" target="_blank">http://www.cacert.org/certs/class3.crt</a></p>
+<p>Vanuit de Dovecot configuratie file gaan we straks verwijzen naar deze 3 bestanden, zet deze op de juiste plaats, met passende permissies:</p>
+<blockquote><p>install -o root -g root -m 644 class3.crt /etc/pki/tls/certs/cacert-class3.crt<br />
+install -o root -g root -m 644 dovecot.crt /etc/pki/dovecot/certs/dovecot.crt<br />
+install -o root -g root -m 644 dovecot.key /etc/pki/dovecot/private/dovecot.key</p></blockquote>
+<p>Plaats het volgende in /etc/dovecot.conf. Maak eerst een backup!</p>
+<blockquote><p>auth_verbose = yes<br />
+protocols = imap imaps<br />
+base_dir = /var/run/dovecot/</p>
+<p>ssl_cert_file = /etc/pki/dovecot/certs/dovecot.crt<br />
+ssl_key_file = /etc/pki/dovecot/private/dovecot.key<br />
+ssl_ca_file = /etc/pki/tls/certs/cacert-class3.crt</p>
+<p>shutdown_clients = yes<br />
+mail_location = maildir:/var/vmail/domains/%d/%n</p>
+<p>auth default {<br />
+mechanisms = PLAIN LOGIN</p>
+<p>userdb static {<br />
+args = uid=500 gid=500<br />
+}</p>
+<p>passdb ldap {<br />
+args = /etc/dovecot-ldap.conf<br />
+}</p>
+<p>userdb ldap {<br />
+args = /etc/dovecot-ldap.conf<br />
+}</p>
+<p>socket listen {<br />
+master {<br />
+path = /var/run/dovecot/auth-master<br />
+mode = 0600<br />
+user = vmail<br />
+group = vmail<br />
+}<br />
+}</p>
+<p>user = vmail<br />
+}</p></blockquote>
+<p>Zorg er voor dat een en ander conform jouw setup is. Denk hierbij vooral aan de user (vmail) en het bijbehorende UID (500) en de locatie van de imap data (mail_location). Bij mij staat de imap dat in /var/vmail/domains/$domein/$user, bijvoorbeeld /var/vmail/domains/example.com/pietjepuk. De loginnaam van deze voorbeeld gebruiker is dan pietjepuk@example.com.</p>
+<p>In mail_location worden enkele Dovecot specifieke variabelen gebruikt. De betekenis er van en andere mogelijkheden, vind je op <a href="http://wiki.dovecot.org/Variables" target="_blank">http://wiki.dovecot.org/Variables</a></p>
+<p>Plaats het volgende in /etc/dovecot-ldap.conf. Als het goed is, bestond dit bestand nog niet. Anders maak je uiteraard eerst een backup.</p>
+<blockquote><p>hosts = $ldapserver<br />
+auth_bind = yes<br />
+auth_bind_userdn = mail=%u,vd=%d,o=hosting,dc=example,dc=com<br />
+ldap_version = 3<br />
+base = o=hosting,dc=example,dc=com<br />
+dn = cn=phamm,o=hosting,dc=example,dc=com<br />
+dnpass = $password<br />
+deref = never<br />
+scope = subtree<br />
+user_attrs = mailbox=mail=maildir:/var/vmail/domains/%$<br />
+user_filter = (&amp;(objectClass=VirtualMailAccount)(accountActive=TRUE)(mail=%u))<br />
+pass_attrs = mail,userPassword<br />
+pass_filter = (&amp;(objectClass=VirtualMailAccount)(accountActive=TRUE)(mail=%u))<br />
+default_pass_scheme = MD5<br />
+user_attrs = quota=quota=maildir:storage=%$B<br />
+user_global_uid = 500<br />
+user_global_gid = 500</p></blockquote>
+<p>Ook hier geldt weer, pas alles aan naar jouw eigen situatie.</p>
+<p>Alle instellingen zijn nu gedaan. Start Dovecot en testen maar!</p>
+<blockquote><p>chkconfig dovecot on<br />
+service dovecot restart</p>
+<p><strong>Bij het starten van Dovecot, wordt er gevraagd om de passphrase van je SSL key (dovecot.key). Mocht je dit niet willen, dan dien je de passphrase te verwijderen van je key. Dat doe je als volgt:</strong></p>
+<p>openssl rsa -in dovecot.key -out dovecot.key</p></blockquote>

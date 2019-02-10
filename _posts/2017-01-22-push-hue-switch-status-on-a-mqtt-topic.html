@@ -1,0 +1,88 @@
+---
+layout: post
+title: Push Hue switch status on a MQTT topic
+category: all
+comments: true
+description: beschrijving
+tags:
+    - hue
+    - mqtt
+---
+
+Since a few weeks we have a Hue switch which can be used to set the Hue lights on and off and also dim or brighten them. Of course the Hue switch only triggers Hue devices and nothing else. But i wanted to trigger other devices also, like a wifi tp-link switch that’s connected to a normal light  when someone pushes the ‘on’ button. And when the ‘off’ button is pressed, all lights in the livingroom should go off, but also that light that’s connected to the tp-link switch and even the TV, radio and the tp-link switch that switches a few devices behind the tv-set that’s not needed at night.
+
+Sadly the switch does not have a webhook or something like that, but it is possible to get the state of the switch from the Hue bridge. With a simple curl command. we can get the state of our switch (our’s has id 2): curl -s -XGET http://<ip address>/api/<user>/sensors/2
+
+{% highlight json %}
+
+{
+ "state": {
+ "buttonevent": 1002,
+ "lastupdated": "2017-01-22T11:34:05"
+ },
+ "config": {
+ "on": true,
+ "battery": 100,
+ "reachable": true,
+ "pending": []
+ },
+ "name": "Hue switch",
+ "type": "ZLLSwitch",
+ "modelid": "RWL021",
+ "manufacturername": "Philips",
+ "swversion": "5.45.1.16265",
+ "uniqueid": "00:aa:bb:cc:00:ff:00:ff-00-ff00"
+}
+{% endhighlight %}
+
+Now it is pretty simple to poll the Hue bridge and when someone pushes a button, send the id of the button on a MQTT topic. I use Home Assistant to catch that event and trigger an action depending on the button pressed. Btw, button 1 is ‘on’, button 2 is ‘brighten, button 3 is dim and button 4 is off.
+
+{% highlight python %}
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import time
+import json
+import requests
+import mosquitto
+
+######## CONFIG ########
+urlhuebase = "http://<ip address>/api/<user>"
+port = 8123
+use_ssl = True
+sensorid = '2'
+pollingtime = 1
+########################
+
+def publish_message(msg, mqtt_path):
+  mqttc.publish(mqtt_path, msg, 1)
+
+def SensorState(sensorid):
+  urlhue = urlhuebase + "/sensors/" + sensorid
+  hueresponse = requests.get(urlhue)
+  state = hueresponse.json().get('state')
+  data = [ state['buttonevent'], state['lastupdated'] ]
+  return data
+
+# Connect to the MQTT broker
+mqttc = mosquitto.Mosquitto("publish_hue_switch")
+mqttc.connect("127.0.0.1")
+
+sensordata = SensorState(sensorid)
+lastupdated = sensordata[1]
+print "lastupdated: {0}".format(lastupdated)
+
+while True:
+  try:
+    sensordata = SensorState(sensorid)
+
+    if (sensordata[1] != lastupdated):
+      button = str(sensordata[0])[0:1]
+      publish_message(msg=button, mqtt_path='house/0/hallway/hueswitch/button_pressed')
+      print 'Button pressed: {0}'.format(button)
+    else:
+      time.sleep(pollingtime)
+  except KeyboardInterrupt:
+    print 'Exiting on request'
+    break
+{% endhighlight %}

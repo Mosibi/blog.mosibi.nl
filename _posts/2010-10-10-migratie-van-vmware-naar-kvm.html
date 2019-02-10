@@ -1,0 +1,34 @@
+---
+layout: post
+title: Migratie van VMWare naar KVM
+date: 2010-10-10 13:44:00.000000000 +02:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- convert
+- kvm
+- vmware
+- vmware2libvirt
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  _wp_old_slug: ''
+  views: '3490'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Sinds enige tijd ben ik van Debian met VMWare server 1.* overgestapt naar Centos (64 bits) en KVM. De vmdk bestanden heb ik via qemu-img geconverteerd naar het qcow2 formaat van Qemu. </p>
+<blockquote><p>sudo qemu-img convert $machine.vmdk -O qcow2 $machine.qcow2</p></blockquote>
+<p>Het bijbehorende vmx bestand heb ik met het python script vmware2libvirt omgezet naar een Libvirt XML file. vmware2libvirt wordt niet meegeleverd bij Centos, deze wordt geleverd/gemaakt door Ubuntu, maar is gewoon los te <a href="http://bazaar.launchpad.net/%7Eubuntu-virt/virt-goodies/trunk/annotate/head%3A/vmware2libvirt">downloaden</a>.</p>
+<blockquote><p>vmware2libvirt -f $machine.vmx > $machine.xml</p></blockquote>
+<p>Hierna importeer je deze met</p>
+<blockquote><p>virsh -c qemu:///system define file.xml</p></blockquote>

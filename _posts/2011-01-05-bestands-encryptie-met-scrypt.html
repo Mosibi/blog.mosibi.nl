@@ -1,0 +1,39 @@
+---
+layout: post
+title: Bestands encryptie met scrypt
+date: 2011-01-05 10:13:45.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- encryptie
+- freebsd
+- password
+- scrypt
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  _wp_old_slug: ''
+  views: '2702'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>In mei 2009 is de tool <a href="http://www.tarsnap.com/scrypt.html" target="_blank">scrypt</a> geschreven door <a href="http://www.daemonology.net/blog/" target="_blank">Colin Percival</a>, de huidige Security Officer van <a href="http://www.freebsd.org" target="_blank">FreeBSD</a>. Wat scrypt nu precies is en kan, kun je lezen op de webpagina, in het kort komt het neer op de volgende quote:</p>
+<blockquote><p>A simple password-based encryption utility is available as a 	demonstration of the <tt>scrypt</tt> key derivation function.  On 	modern hardware and with default parameters, the cost of cracking the 	password on a file encrypted by <tt>scrypt enc</tt> is approximately 	100 billion times more than the cost of cracking the same password on 	a file encrypted by <tt>openssl enc</tt>; this means that a 	five-character password using <tt>scrypt</tt> is stronger than a 	ten-character password using <tt>openssl</tt>.</p></blockquote>
+<p>Klinkt allemaal goed, maar wat ik wil is gewoon een simpele methode om mijn bestand met wachtwoorden beschermen, zodat bij verlies of diefstal, ik niet een megaprobleem heb. Het merendeel van de wachtwoorden die in dat bestand staan, zijn automatisch gegenereerd en bestaan uit minimaal 10 karakters, dus als ik die kwijt ben, weet ik ze ook echt niet meer :)</p>
+<p>Op een FreeBSD systeem kun je scrypt installeren vanuit de ports collectie (/usr/ports/security/scrypt), voor andere OS'en dien je de source te downloaden en zelf de compileren.</p>
+<p>Het aanmaken van een gecrypt bestand gaat met scrypt erg simpel.</p>
+<blockquote><p>scrypt enc infile outfile</p></blockquote>
+<p>In bovenstaand voorbeeld is infile je bronbestand welke je wilt crypten en outfile het gecrypte bestand. Scrypt zal je bij het uitvoeren twee maal vragen om de passphrase (wachtwoord) waarmee je het bestand wilt beveiligen. Na het aanmaken van outfile, moet je natuurlijk wel je bronbestand verwijderen, maar controleer eerst of je het bestand kunt decrypten.</p>
+<p>Decrypten gaat als volgt:</p>
+<blockquote><p>scrypt dec outfile</p></blockquote>
+<p>De output wordt op het scherm getoond (STDOUT), wil je de output naar een bestand hebben, dan zet je uiteraard '<em>&gt; newfile</em>' achter bovenstaand commando, waarbij <em>newfile</em> de naam is van je gewenste bestandsnaam.</p>
+<p>Enjoy!</p>

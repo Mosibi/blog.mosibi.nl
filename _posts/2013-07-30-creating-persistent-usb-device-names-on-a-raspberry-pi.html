@@ -1,0 +1,36 @@
+---
+layout: post
+title: Creating persistent USB device names on a Raspberry Pi
+date: 2013-07-30 20:11:31.000000000 +02:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Algemeen
+- Unix
+tags: []
+meta:
+  _edit_last: '1'
+  views: '4869'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>If you use multiple USB devices that for example create device names like /dev/ttyUSB0, /dev/ttyUSB1 and so on, you probably want to assign device names that are more descriptive. On Linux (and thus on an Raspberry Pi) you can do this by writing an udev rule. Udev is a device event handler, so when you plugin your USB device it will be seen by udev and will create device names according the ruleset.</p>
+<p>I have two devices that I like to have a device name that are persistent. A Xbee/Zigbee Xstick from digi.com and an USB FTDI serial cable. Normally on a Linux system, you use the command 'udevadm info' to get the information you need to specify in the config file, but on the RPi 'udevadm info' results in a kernel panic, so use the commands 'lsusb -v' and 'usb-devices' to get the information you need.</p>
+<p>Create a file /etc/udev/rules.d/99-usbdevices.rules with the following content:</p>
+<p>ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{product}=="XStick", SYMLINK+="zigbee"<br />
+ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="A6WGT0NS", SYMLINK+="smartmeter"</p>
+<p>And restart udev and trigger pulling the devices:</p>
+<p>sudo /etc/init.d/udev reload<br />
+sudo udevadm trigger</p>
+<p>After that you should have links with the names you specified pointing to the real devices</p>
+<p>$ ls -l /dev/zigbee /dev/smartmeter<br />
+lrwxrwxrwx 1 root root 7 Jul 30 21:02 /dev/smartmeter -&gt; ttyUSB0<br />
+lrwxrwxrwx 1 root root 7 Jul 30 21:02 /dev/zigbee -&gt; ttyUSB1</p>
+<p>From now you can reference /dev/smartmeter instead of /dev/ttyUSB0 or some other number.</p>

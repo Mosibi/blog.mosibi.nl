@@ -1,0 +1,39 @@
+---
+layout: post
+title: Migratie van VMWare image naar Virtualbox
+date: 2009-12-11 23:09:22.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- conversie
+- virtualbox
+- vmware
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  views: '1957'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Er komt hopelijk zeer snel het moment dat ik Virtualbox op FreeBSD stabiel genoeg vind om mijn 'productie'' machines op te gaan draaien. Vooral in combinatie met ZFS en dus snapshots is dat super. Nu draait echter mijn basis server voor virtualisatie nog met Debian en VMWare server, ook geen gekke combinatie hoor.</p>
+<p>Om mezelf alvast een beetje voor te bereiden op een migratie naar Virtualbox heb ik net mijn proxyserver, welke voorzien is van FreeBSD 8.0 down gebracht en de VMDK's die er bij horen overgezet naar onze Ubuntu desktop machine waar Virtualbox 3.0 op draait. Hierna heb ik binnen Virtualbox een nieuw systeem aangemaakt en daaraan de zojuist gekopieerde VMDK gekoppeld. Als je je originele virtuele disk hebt opgedeeld in stukken van 2GB, heb je dus meerdere VMDK bestanden. Virtualbox snapt dit, dus je kiest dan ook de 'hoofd VMDK'. De naamgeving zal duidelijk aangeven welke je dient te kiezen.</p>
+<p>Na het kiezen van de juiste disk is de machine klaar om te booten, wat ik mijn geval erg goed ging. Wel diende ik in de /etc/rc.conf de ifconfig_le0 entry te vervangen door ifconfig_em0, aangezien Virtualbox gebruikt maakt van een andere virtuele netwerk interface dan VMWare. Wel vondt FreeBSD dat er iets aan de hand was met de disk, dus draaide er een fsck op de achtergrond mee. Nadat deze fsck zijn werk gedaan had, draaide het systeem helemaal perfect.</p>
+<p>Om nu een Virtualbox instance te draaien met VMWare bestanden vond ik ook niet echt netjes, dus nu ik toch aan het testen was, ook meteen maar gebruik gemaakt van de converteer mogelijkheid binnen Virtualbox. Dit is mogelijk met het commando VBoxManage, dit is wat de help aangeeft.</p>
+<blockquote>
+<pre>Usage: VBoxManage internalcommands &lt;command&gt; [command arguments]
+
+converthd [-srcformat VDI|VMDK|VHD|RAW]
+[-dstformat VDI|VMDK|VHD|RAW]
+&lt;inputfile&gt; &lt;outputfile&gt;
+converts hard disk images between formats</pre>
+</blockquote>
+<p>Het commando wat ik uitgevoerd heb is: <em>VBoxManage internalcommands converthd -srcformat VMDK -dstformat VDI FreeBSD.vmdk FreeBSD.vdi</em> Hierna heb ik de geconverteerde disk gekoppeld aan de virtuele proxy server in Virtualbox en de oude disk (FreeBSD.vmdk) verwijderd en het systeem geboot. Zoals gehoopt ging dit helemaal zonder enig probleem en dus draait het systeem zonder problemen. Een hele dikke plus voor Virtualbox!!</p>

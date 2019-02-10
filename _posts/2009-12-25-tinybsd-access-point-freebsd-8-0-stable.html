@@ -1,0 +1,66 @@
+---
+layout: post
+title: 'TinyBSD Access Point :: FreeBSD 8.0 Stable'
+date: 2009-12-25 22:04:20.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- iPhone
+- Unix
+tags:
+- freebsd
+- iPhone
+- tinybsd
+- wifi
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  views: '1944'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Sinds afgelopen maandag ben ik de gelukkige eigenaar van een iPhone 3GS 32GB, maar zoals zo vaak met nieuwe gadgets, was ook hier wel weer wat aan de hand. De wireless verbinding op iphone viel na een paar seconden uit en dan duurde het weer even voordat er een verbinding tot stand werd gebracht die het weer een paar seconden volhield, niet echt waar ik op zat te wachten uiteraard.</p>
+<p>Het AP wat ik gebruik is gebaseerd op een Wrap embedded bordje van <a href="www.pcengines.ch" target="_blank">www.pcengines.ch</a>, die ik met de TinyBSD scripts heb voorzien van FreeBSD. Dat gaf mij gelukkig dus wel de mogelijkheid om fatsoenlijk te onderzoeken wat er nu precies mis ging. De logging liet mij het volgende zien</p>
+<blockquote><p>hostapd: ath0: STA xx:xx:xx:xx:xx:xx WPA: EAPOL-Key timeout<br />
+hostapd: ath0: STA xx:xx:xx:xx:xx:xx IEEE 802.1X: unauthorizing port<br />
+hostapd: ath0: STA xx:xx:xx:xx:xx:xx IEEE 802.11: deauthenticated due to local deauth request<br />
+hostapd: ath0: STA xx:xx:xx:xx:xx:xx IEEE 802.11: deassociated</p></blockquote>
+<p>Na wat Googlen kwam ik er achter dat een upgrade naar een nieuwere FreeBSD en dus ook allerlei recentere wifi gerelateerde code mijn probleem zeer waarschijnlijk zou oplossen. Het was al een hele tijd geleden dat ik voor het laatst een compact flash image had gemaakt, dus ik moest eerst een nieuwe build omgeving inrichten, dat heb ik gedaan door FreeBSD 8.0 te installeren in een verse virtuele (vmware) machine. Deze is na de installatie van de release CD meteen geupgrade naar 8.0 STABLE.</p>
+<p>Helaas is de huidige TinyBSD configuratie niet meer compatible met 8.0, er worden onder andere kernel configuratie bestanden van FreeBSD 7.* meegeleverd. Ik vermoed de de meerderheid van de gebruikers inmiddels NanoBSD gebruiken ipv TinyBSD, toch jammer want er zit heel wat code van mijzelf in (de port build constructie is onder andere van mijn hand). Voor mijn wrap doosje heb ik een custom kernel config gemaakt op basis van FreeBSD 8.0 en tevens de tinybsd.basefiles geupdate aan de nieuwe situatie.</p>
+<p>Het meeste spannende was trouwens de nieuwe Wifi configuratie in FreeBSD 8.0, die nu ook Virtual AP's (VAP) ondersteund. Maar goed, dat is na wat lees- en uitzoekwerk ook weer gelukt. In de /etc/rc.conf staat nu (o.a.) het volgende:</p>
+<blockquote><p>cloned_interfaces="bridge0"<br />
+ifconfig_ath0="up"<br />
+ifconfig_sis0="up"<br />
+wlans_ath0="wlan0"<br />
+create_args_wlan0="wlanmode hostap"<br />
+ifconfig_wlan0="inet 10.10.10.10 netmask 255.255.0.0 ssid myssid channel 3 mode 11g"<br />
+ifconfig_bridge0="addm wlan0 addm sis0 up"<br />
+hostapd_enable="YES"</p></blockquote>
+<p>/etc/hostapd.conf bevat het volgende</p>
+<blockquote><p>interface=wlan0<br />
+driver=bsd<br />
+logger_syslog=-1<br />
+logger_syslog_level=0<br />
+logger_stdout=-1<br />
+logger_stdout_level=0<br />
+debug=4<br />
+dump_file=/tmp/hostapd.dump<br />
+ctrl_interface=/var/run/hostapd<br />
+ctrl_interface_group=wheel<br />
+ssid=myssid<br />
+wpa=2<br />
+wpa_passphrase=mysecret<br />
+wpa_key_mgmt=WPA-PSK</p></blockquote>
+<p>De meeste opties zullen voor zichzelf spreken, echter 2 wil ik hier nog wel uitleggen.</p>
+<p><strong><em>wpa</em></strong></p>
+<p>Hiermee geef je aan welke vorm van WPA je wilt ondersteunen op jouw AP. 1 is WPA(1), 2 is WPA2 en 3 is zowel WPA als WPA2.</p>
+<p><em><strong>wpa_key_mgmt</strong></em></p>
+<p>Hierbij heb je de opties WPA-PSK en WPA-EAP of beide. PSK staat voor pre-shared key en EAP voor Extensible Authentication Protocol. De eerste is voor thuisgebruik en houdt in dat de wireless client en de access point een wachtwoord delen en de tweede voor 'enterprise' gebruik waarbij de authenticatie plaats vindt door middel van radius.</p>
+<p>Ik heb nu weer een vers (bridging) access point en zoals gehoopt en verwacht heeft mijn iPhone nu inderdaad geen problemen meer.</p>

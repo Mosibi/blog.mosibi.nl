@@ -1,0 +1,37 @@
+---
+layout: post
+title: 'Renaming a virtual host with virsh :: kvm'
+date: 2010-12-26 17:28:23.000000000 +01:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- Unix
+tags:
+- kvm
+- virsh
+- virtualisation
+meta:
+  _edit_last: '1'
+  has_been_twittered: 'yes'
+  _wp_old_slug: ''
+  views: '2411'
+author:
+  login: admin
+  email: richard@mosibi.nl
+  display_name: Mosibi
+  first_name: Richard
+  last_name: Arends
+---
+<p>Soms is het handig om een virtueel systeem te hernoemen. Als ik bijvoorbeeld een nieuwe versie van een server aan het bouwen ben, noem ik zo'n machine vaak iets als new_$originelenaam. Met onderstaande commando's kun je de naam van een virtueel systeem KVM hernoemen.</p>
+<p>Eerst dienen we de huidige configuratie van het systeem weg te schrijven naar een bestand</p>
+<blockquote><p>sudo virsh dumpxml machinenaam &gt; /tmp/nieuwemachinenaam.xml</p></blockquote>
+<p>Bewerk het bestand /tmp/machinenaam.xml, zet tussen de &lt;name&gt; &lt;/name&gt; tags de gewenste nieuwe naam</p>
+<blockquote><p>sudo vi /tmp/nieuwemachinenaam.xml</p></blockquote>
+<p>De bestaande configuratie van het systeem dient nu verwijderd te worden.</p>
+<blockquote><p>sudo virsh undefine machinenaam</p></blockquote>
+<p>Nu kan het systeem weer worden aangemaakt met de nieuwe naam.</p>
+<blockquote><p>sudo virsh define /tmp/nieuwemachinenaam.xml</p></blockquote>
+<p>All done, starten maar!!</p>
