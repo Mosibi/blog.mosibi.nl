@@ -1,1 +1,1 @@
-# mosibi.github.io
+# Visit [blog.mosibi.nl](http://blog.mosibi.nl)
