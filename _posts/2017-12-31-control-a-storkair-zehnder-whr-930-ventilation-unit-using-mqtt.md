@@ -12,7 +12,7 @@ Our house is equipped with a WHR 930 ventilation system, in Dutch a ‘warmte te
 
 ![]({{ site.baseurl }}/assets/whr930.jpg)
 
-Searching the internet for possibilities i learned that the WHR 930 has a serial interface on it’s mainboard and that the protocol is fully reverse engineered! The picture below is one of the mainboard, the red arrow points at the serial interface (RJ45)
+Searching the internet for possibilities i learned that the WHR 930 has a serial interface on it’s mainboard and that the protocol is [fully reverse engineered!](http://www.see-solutions.de/sonstiges/Protokollbeschreibung_ComfoAir.pdf) The picture below is one of the mainboard, the red arrow points at the serial interface (RJ45)
 
 ![]({{ site.baseurl }}/assets/whr930_board.png)
 
@@ -20,6 +20,6 @@ I modified a UTP cable to get the right pin layout for a Serial<>USB converter a
 
 For now i am happy, but the serial protocol description shows that there is much more possible. Maybe i will look into that later, but do not hesitate to contact me (see my Github page for contact info) if you found out nice additions!
 
-For integration with Home Assistant, see the README file on my Github channel.
+For integration with Home Assistant, see the [README](https://github.com/Mosibi/whr_930) file on my Github channel.
 
 ![]({{ site.baseurl }}/assets/whr930_homeassistant_2.png)
