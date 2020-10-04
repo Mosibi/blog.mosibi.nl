@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Control a StorkAir/Zehnder WHR 930 ventilation unit using mqtt
-category: domotica
+categories: [all, domotica ]
 comments: true
 tags:
     - whr930

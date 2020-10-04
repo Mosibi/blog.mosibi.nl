@@ -1,10 +1,10 @@
 ---
 layout: post
 title: Create a Red Hat UBI container for Fedora Toolbox
-category: all
+category: [all, linux]
 comments: true
 description: Create a Red Hat UBI container for Fedora Toolbox
-tags: ubi, ubi8, toolbox, fedora, silverblue
+tags: [ubi, ubi8, toolbox, fedora, silverblue]
 ---
 
 ## Fedora Toolbox

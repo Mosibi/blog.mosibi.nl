@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Create a CentOS 8 virtual machine using Terraform
-category: all
+categories: [all, linux]
 comments: true
 description: Create a CentOS8 virtual machine using Terraform
 tags: terraform, centos8

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Blog restored
-category: all
+categories: [all]
 comments: true
 description: beschrijving
 tags: blog
