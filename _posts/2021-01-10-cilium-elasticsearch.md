@@ -33,7 +33,7 @@ helm install --namespace logging fluent-bit fluent/fluent-bit
 ```
 
 ### Kibana and Fluent Bit
-[Kibana](https://www.elastic.co/kibana) is a web-based graphical user interface for Elasticsearch, which has become the defacto standard to visualize data from Elasticsearch and [Fluent Bit](https://fluentbit.io) is a log processor and forwarder which allows you to collect logs from different sources like containers and send them to multiple destinations. In this lab environment, Fluent Bit read the logging from containers and sends it to Elasticsearch, which is a very common setup in Kubernetes land.
+[Kibana](https://www.elastic.co/kibana) is a web-based graphical user interface for Elasticsearch, which has become the defacto standard to visualize data from Elasticsearch and [Fluent Bit](https://fluentbit.io) is a log processor and forwarder which allows you to collect logs from different sources like containers and send them to multiple destinations. In this lab environment, Fluent Bit reads the logging from containers and sends it to Elasticsearch, which is a very common setup in Kubernetes land.
 
 ### Ingress
 Although not necessary, I also created the following ingress rules so that I can reach http://kibana.example.com and http://elasticsearch.example.com from my laptop.
