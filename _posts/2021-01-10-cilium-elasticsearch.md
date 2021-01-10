@@ -7,7 +7,7 @@ description: Protect Elasticsearch with Cilium network policies (eBPF)
 tags: kubernetes, cilium, elasticsearch, eBPF
 ---
 
-In this blog post I will show you how easy it is to limit access to your Elasticsearch cluster in Kubernetes when you are using Cilium. As a side note: of course I know that Elastic has its own ways of limiting access, which are not all without a license (fee), so this post is not to be read as "this is how you limit access to Elasticsearch", but as "Hey this is fun, you can use Cilium" to secure your Elasticsearch cluster.
+In this blog post, I will show you how easy it is to limit access to your Elasticsearch cluster in Kubernetes when you are using Cilium. As a side note: of course I know that Elastic has its own ways of limiting access, which are not all without a license (fee), so this post is not to be read as "this is how you limit access to Elasticsearch", but as "Hey this is fun, you can use Cilium" to secure your Elasticsearch cluster.
 
 ## What is Cilium
 > [Cilium](https://cilium.io) is open source software for transparently securing the network connectivity between application services deployed using Linux container management platforms like Docker and Kubernetes.
@@ -33,7 +33,7 @@ helm install --namespace logging fluent-bit fluent/fluent-bit
 ```
 
 ### Kibana and Fluent Bit
-[Kibana](https://www.elastic.co/kibana) is a web-based graphical user interface for Elasticsearch, which has become the defacto standard to visualize data from Elasticsearch and [Fluent Bit](https://fluentbit.io) is and log processor and forwarder which allows you to collect logs from different sources like containers and send them to multiple destinations. In this lab environment, Fluent Bit reads the logging from containers and sends it to Elasticsearch, which is a very common setup in Kubernetes land.
+[Kibana](https://www.elastic.co/kibana) is a web-based graphical user interface for Elasticsearch, which has become the defacto standard to visualize data from Elasticsearch and [Fluent Bit](https://fluentbit.io) is a log processor and forwarder which allows you to collect logs from different sources like containers and send them to multiple destinations. In this lab environment, Fluent Bit read the logging from containers and sends it to Elasticsearch, which is a very common setup in Kubernetes land.
 
 ### Ingress
 Although not necessary, I also created the following ingress rules so that I can reach http://kibana.example.com and http://elasticsearch.example.com from my laptop.
