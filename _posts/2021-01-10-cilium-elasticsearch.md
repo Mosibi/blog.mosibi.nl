@@ -205,7 +205,7 @@ In the previous Cilium network policies, I used *fromEndpoints* together with a 
 > The "all" entity represents the combination of all known clusters as well world and whitelists all communication.
 
 ### Access to the logstash indices from the default namespace
-Where all the previous policies are policies that set the base to get a working cluster and allow basic communication with it, this policy allows access from an application living in the default namespace to access data in the logstash indices.
+Where all the previous policies, are policies that set the base to get a working cluster and allow basic communication with it, this policy allows access from an application living in the default namespace to access data in the logstash indices.
 
 ```lang=shell
 cat <<EOF | kubectl -n default apply -f -
