@@ -347,8 +347,8 @@ kubectl -n kube-system expose deployment hubble-ui --type=LoadBalancer --port=80
 ![]({{ site.baseurl }}/assets/cilium-bgp-hubble-default.png)
 
 ## Conclusion
-Setting up Cilium combined with BGP is very easy with the integrated MetalLB and does not require expensive network hardware to set up. Cilium/BGP combined with the disabling of kube-proxy, lowers the latency to your cloud bases services and gives an clear view of what is exposed to the outside world by only announcing the LoadBalancers ip addresses. And although not not necessarily needed with this setup, I still would use an Ingress Controller like NGINX or Treafik, exposed by BGP of course, for most of my HTTP services, since those have great value at the protocol level, for example to rewrite URLs or ratelimit service requests.
+Setting up Cilium combined with BGP is very easy with the integrated MetalLB and does not require expensive network hardware to set up. Cilium/BGP combined with the disabling of kube-proxy, lowers the latency to your cloud based services and gives an clear view of what is exposed to the outside world by only announcing the LoadBalancers ip addresses. And although not necessarily needed with this setup, I still would use an Ingress Controller like NGINX or Traefik, exposed by BGP of course, for most of my HTTP services, since those have great value at the protocol level, for example to rewrite URLs or ratelimit service requests.
 
-It is very exiting to see that cloud native networking, but also networking witin Linux is still improving.
+It is very exiting to see that cloud native networking, but also networking within Linux is still improving.
 
 
