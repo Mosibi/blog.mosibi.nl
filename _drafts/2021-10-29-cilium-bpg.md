@@ -7,23 +7,23 @@ description: Expose loadbalanced Kubernetes services with BGP (Cilium)
 tags: kubernetes, bgp, cilium
 ---
 
-This blog post show you how you Kubernetes service can be exposed to the outside world, using [Cilium](https://cilium.io) and BGP.
+This blog post shows you how your Kubernetes Service can be exposed to the outside world, using [Cilium](https://cilium.io) and BGP.
 
 ## Cilium
-> Cilium is an open source project to provide networking, security, and observability for cloud native environments such as Kubernetes clusters and other container orchestration platforms.
+> Cilium is an open source project to provide networking, security and observability for cloud native environments such as Kubernetes clusters and other container orchestration platforms.
 
 ## BGP
-> Border Gateway Protocol (BGP) is a standardized exterior gateway protocol designed to exchange routing and reachability information among autonomous systems (AS) on the [Internet](https://web.archive.org/web/20130928115120/http://www.orbit-computer-solutions.com/BGP.php). BGP is classified as a [path-vector routing protocol](https://conferences.sigcomm.org/sigcomm/2003/papers/p49-sobrinho.pdf), and it makes routing decisions based on paths, network policies, or rule-sets configured by a network administrator. Source: [Wikipedia](https://en.wikipedia.org/wiki/Border_Gateway_Protocol)
+> Border Gateway Protocol (BGP) is a standardized exterior gateway protocol designed to exchange routing and reachability information among autonomous systems (AS) on the [Internet](https://web.archive.org/web/20130928115120/http://www.orbit-computer-solutions.com/BGP.php). BGP is classified as a [path-vector routing protocol](https://conferences.sigcomm.org/sigcomm/2003/papers/p49-sobrinho.pdf). It makes routing decisions based on paths, network policies or rule sets configured by a network administrator. Source: [Wikipedia](https://en.wikipedia.org/wiki/Border_Gateway_Protocol)
 
-You can compare BGP somewhat with the postal service, where a distribtion centre can be seen as a AS which is repsonsible for certain zip-codes. When you sent a letter to your friend on the other side of the country, your local postal office does not deliver it directly to your friend, but they know based on the zip-code, to which distribution centre they should sent it. And from that distribution centre it probably will be sent to an other distribution centre before it is handovered for local delivery in the city of your friend.
+You can compare BGP somewhat with the postal service, where a distribution center can be seen as an AS which is responsible for certain postal codes. When you send a letter to your friend on the other side of the country, your local postal office does not deliver it directly to your friend, but they know based on the postal code, to which distribution center they should send it. And from that distribution center it probably will be send to another distribution center before it is handed over for local delivery in the city of your friend.
 
 ## Cilium and BGP
-In release 1.10, [Cilium](https://cilium.io) integrated BGP support using [MetalLB](https://metallb.universe.tf), which enables it to announce Kubernetes Service ip addresses of the type LoadBalancer using BGP. The result is that service are reachable from outside the Kubernetes netwerk without extra components, like for example an Ingress Router. Especially the 'without extra components' part is fantastic news, since every component adds latency, so without those, **less latency**.
+In release 1.10, [Cilium](https://cilium.io) integrated BGP support using [MetalLB](https://metallb.universe.tf), which enables it to announce Kubernetes Service ip addresses of the type LoadBalancer using BGP. The result is that services are reachable from outside the Kubernetes network without extra components, such as an Ingress Router. Especially the 'without extra components' part is fantastic news, since every component adds latency - so without those **less latency**.
 
 ## Lab environment
-First let me explain how the lab is set-up and what the ending result will be. 
+First let me explain how the lab is set up and what the final result will be. 
 
-The lab consists of a client network (192.168.10.0/24) and a Kubernetes network (192.168.1.1/24). When a service get's a loadlabalancer ip address, that address will be server from the pool 172.16.10.0/24. In our lab, the following nodes are present:
+The lab consists of a client network (192.168.10.0/24) and a Kubernetes network (192.168.1.1/24). When a Service gets a LoadBalancer ip address, that address will be served from the pool 172.16.10.0/24. In our lab, the following nodes are present:
 
 | Name | IP addresses | Description |
 | ----------- | ----------- | ----------- |
@@ -38,11 +38,11 @@ The lab consists of a client network (192.168.10.0/24) and a Kubernetes network 
 
 ![]({{ site.baseurl }}/assets/cilium-bgp-lab-setup.png)
 
-After all the parts are configured, it will be possible to reach a service in the Kubernetes network, from the client network, using the announced LoadBalancer IP address.
+After all the parts are configured, it will be possible to reach a Service in the Kubernetes network, from the client network, using the announced LoadBalancer IP address.
 
 ## Lab configuration
 ### BGP router
-The router is a Red Hat 8 system with three network interfaces (*external-, kubernetes- and client network*) with [FRRouting](https://frrouting.org/) (FRR) repsonsible for handling the BGP traffic. FRR is a free and open source Internet routing protocol suite for Linux and Unix platforms. It implements many routing protocols like BGP, OSPF and RIP, where in our lab only BGP will be enabled.
+The router is a Red Hat 8 system with three network interfaces (*external-, kubernetes- and client network*) with [FRRouting](https://frrouting.org/) (FRR) responsible for handling the BGP traffic. FRR is a free and open source Internet routing protocol suite for Linux and Unix platforms. It implements many routing protocols like BGP, OSPF and RIP. In our lab only BGP will be enabled.
 
 ```lang=shell
 dnf install frr
@@ -52,7 +52,7 @@ echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/01-sysctl.conf
 sysctl -w net.ipv4.ip_forward=1
 ```
 
-After installing FRR, the BGP daemon is configured to start by changing `bgpd=no` to in `bgpd=yes` in the configuration file `/etc/frr/daemons`, using the following BGP configuration in `/etc/frr/bgpd.conf`
+After installing FRR, the BGP daemon is configured to start by changing `bgpd=no` to `bgpd=yes` in the configuration file `/etc/frr/daemons`, using the following BGP configuration in `/etc/frr/bgpd.conf`
 
 ```
 log syslog notifications
@@ -88,9 +88,9 @@ router bgp 64512
 line vty
 ```
 
-In the config file above the AS number *64512* is used, which is reserved for private use. The Kubernetes master node and worker nodes are configured as *neighbor*, and the ip address of the routers interface in the Kubernets network (192.168.1.1) is used as router id.
+In the config file above the AS number *64512* is used, which is reserved for private use. The Kubernetes master node and worker nodes are configured as *neighbor*. The ip address of the router's interface in the Kubernetes network (192.168.1.1) is used as router id.
 
-After the configuration above, the FRR daemon is started the `systemctl start frr` command and the command `vtysh -c 'show bgp summary'` showed the following output.
+After the configuration above is applied and the FRR daemon is started using the `systemctl start frr` command, the command `vtysh -c 'show bgp summary'` shows the following output.
 
 ```
 IPv4 Unicast Summary:
@@ -111,7 +111,7 @@ Total number of neighbors 6
 ```
 
 ### Kubernetes and Cilium
-It goes beyond the scope of this posting to explain how to install the Kubernetes nodes and the Kubernetes cluster, in this lab Red Hat 8 (minimal installation) is used as operating system for all the nodes and after that, [Kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/) is used to set-up the cluster.
+It goes beyond the scope of this blog to explain how to install the Kubernetes nodes and the Kubernetes cluster. For your information: in this lab Red Hat 8 (minimal installation) is used as the operating system for all the nodes and [Kubeadm](https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/) was subsequently used to set up the cluster.
 
 The Cilium [Helm chart](https://github.com/cilium/cilium/releases/tag/v1.10.5) version v1.10.5 is used to install and configure Cilium on the cluster, using these values:
 
@@ -153,10 +153,10 @@ hubble:
     enabled: true
 ```
 
-To get Cilium up and runing with BGP, only the `bgp` key and subkeys are needed of the settings above, the other settings are used to get a fully working Cilium environment with also for example the Hubble user interface.
+To get Cilium up and running with BGP, only the `bgp` key and subkeys are needed from the settings above. The other settings are used to get a fully working Cilium environment with, for example the Hubble user interface.
 
 ## Expose a service
-When Kubernetes is running and Cilium is configured, it is time to create a deployment and expose it to the network using BGP. The following yaml file creates a *Deployment* web1, which is just a simple NGINX webserver, serving the default web page and a *Service* web1-lb that creates a service type LoadBalancer which results in an external ip address that is announced using BGP to our router.
+When Kubernetes is running and Cilium is configured, it is time to create a deployment and expose it to the network using BGP. The following YAML file creates a *Deployment* web1, which is just a simple NGINX web server serving the default web page The file also creates a *Service* web1-lb with a Service type LoadBalancer. This results in an external ip address that is announced to our router using BGP.
 
 ```lang=yaml
 ---
@@ -200,7 +200,7 @@ spec:
             port: 80
 ```
 
-After applying the yaml file above, the command `kubectl get svc` shows that service *web1-lb* has an external ip address:
+After applying the YAML file above, the command `kubectl get svc` shows that Service *web1-lb* has an external ip address:
 
 ```
 NAME         TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)        AGE
@@ -208,7 +208,7 @@ kubernetes   ClusterIP      10.96.0.1        <none>        443/TCP        7d3h
 web1-lb      LoadBalancer   10.106.236.120   172.16.10.0   80:30256/TCP   7d2h
 ```
 
-The address 172.16.10.0 seems strange, but is not. Often the .0 address is skipped and address .1 is used as first address and one of the reasons is that in the early days the .0 address was used for broadcast, which has changed to .255 later. And since it is a valid address, MetalLB which is responsible for the address pool, hands is out as the first address. And the command `vtysh -c 'show bgp summary'` on router *bgp-router1* shows that it has received one prefix:
+The address 172.16.10.0 seems strange, but it is fine. Often the .0 address is skipped and the .1 address is used as the first address. One of the reasons is that in the early days the .0 address was used for broadcast, which was later  changed to .255. Since .0 is still a valid address MetalLB, which is responsible for the address pool, hands it out as the first address. The command  `vtysh -c 'show bgp summary'` on router *bgp-router1* shows that it has received one prefix:
 
 ```
 IPv4 Unicast Summary:
@@ -228,7 +228,7 @@ Neighbor        V         AS   MsgRcvd   MsgSent   TblVer  InQ OutQ  Up/Down Sta
 Total number of neighbors 6
 ```
 
-Also on the router, the following snippet of the routing table (`ip route`) learns us that for that specific ip address 172.16.10.0, 6 possible routes/destinations are present. In other words, all Kubernetes nodes announced that they can handle traffic for that address. Cool !!
+The following snippet of the routing table (`ip route`) tells us that for that specific ip address 172.16.10.0, 6 possible routes/destinations are present. In other words, all Kubernetes nodes announced that they can handle traffic for that address. Cool!!
 
 ```
 172.16.10.0 proto bgp metric 20 
@@ -240,7 +240,7 @@ Also on the router, the following snippet of the routing table (`ip route`) lear
 	nexthop via 192.168.1.25 dev enp7s0 weight 1 
 ```
 
-And indeed, the web page is now visible from our router.
+Indeed, the web page is now visible from our router.
 
 ```lang=shell
 $ curl -s -v http://172.16.10.0/ -o /dev/null 
@@ -274,24 +274,24 @@ And a client in our client network can also reach that same page, since it uses 
 Now it is all working, most engineers want to see more details, so I will not let you down :)
 
 ### ping
-One of the first things you will notice is, that the load balanced ip address is not reachable via ping. Diving a bit deeper reveals why that is, but before that, let's create the cilium aliases to make it easier running the `cilium`, which is present in each cilium agent pod.
+One of the first things you will notice is that the LoadBalanced ip address is not reachable via ping. Diving a bit deeper reveals why, but before that, let's create the Cilium aliases to make it easier running `cilium`, which is present in each Cilium agent pod.
 
 ```lang=shell
 CILIUM_POD=$(kubectl -n kube-system get pods -l k8s-app=cilium --output=jsonpath='{.items[*].metadata.name}' --field-selector=spec.nodeName=k8s-master1)
 alias cilium="kubectl -n kube-system exec -ti ${CILIUM_POD} -c cilium-agent -- cilium"
 ```
 
-First see the output of this snippet of `cilium bpf lb list`, that show the configured load balancing configuration inside Cilium for our service *web1-lb`:
+First see the output of this snippet of `cilium bpf lb list`, that shows the configured load balancing configuration inside Cilium for our Service *web1-lb`:
 
 ```
 172.16.10.0:80       0.0.0.0:0 (5) [LoadBalancer]               
                      10.0.3.150:80 (5)
 ```
 
-Here you can see that a mapping is created between source port 80 and destination port 80. This mapping is executed using eBPF logic at the interface and is present on all nodes. This mapping shows that only(!) traffic for port 80 is balanced, all other traffic, including the ping, is not picked up. That is why you can see the icmp packet reaching the node, but a response is never sent.
+Here you can see that a mapping is created between source port 80 and destination port 80. This mapping is executed using eBPF logic at the interface and is present on all nodes. This mapping shows that only(!) traffic for port 80 is balanced. All other traffic, including the ping, is not picked up. That is why you can see the icmp packet reaching the node, but a response is never send.
 
 ### Observe traffic
-[Hubble](https://github.com/cilium/hubble) is the networking and security observability platform which is build on top of eBPF and Cilium. Via the command line and via a graphical web gui, it is possible to see current and historical traffic. In this lab, hubble is placed on the k8s-control node, which has direct access to the API of Hubble Relay. Hubble Relay is the component that obtains the needed information from the Cilium nodes. Be aware that the hubble command is also present in each Cilium Agent pod, but that one will only show information for that specific agent!
+[Hubble](https://github.com/cilium/hubble) is the networking and security observability platform which is built on top of eBPF and Cilium. Via the command line and via a graphical web GUI, it is possible to see current and historical traffic. In this lab, Hubble is placed on the k8s-control node, which has direct access to the API of Hubble Relay. Hubble Relay is the component that obtains the needed information from the Cilium nodes. Be aware that the `hubble` command is also present in each Cilium agent pod, but that one will only show information for that specific agent!
 
 ```lang=shell
 export HUBBLE_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/hubble/master/stable.txt)
@@ -301,7 +301,7 @@ sudo tar xzvfC hubble-linux-amd64.tar.gz /usr/local/bin
 rm hubble-linux-amd64.tar.gz{,.sha256sum}
 ```
 
-The following outputs show the observer information which are a result of the `curl http://172.16.10.0/` command on the router.
+The following outputs show the observer information which is a result of the `curl http://172.16.10.0/` command on the router.
 
 $ hubble observe --namespace default --follow
 Oct 31 15:43:41.382: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: SYN)
@@ -312,7 +312,7 @@ Oct 31 15:43:41.385: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-ov
 Oct 31 15:43:41.386: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK, FIN)
 Oct 31 15:43:41.386: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK)
 
-Before, I warned about not using the `hubble` command inside the cilium-agent pod, but it can also be very informational seeing the specific node traffic. In this case a `hubble observe --namespace default --follow` is executed within each cilium-agent pod and the curl from the router is once executed. On the node where the pod is 'living' (k8s-worker2), we see the same output as the one above, but on an other pod (k8s-worker1) we see the following output:
+Before, I warned about not using the `hubble` command inside the Cilium agent pod, but it can also be very informative seeing the specific node traffic. In this case a `hubble observe --namespace default --follow` is executed within each Cilium agent pod and the curl from the router is once executed. On the node where the pod is 'living' (k8s-worker2), we see the same output as the one above, However on another pod (k8s-worker1) we see the following output:
 
 ```
 Oct 31 15:56:05.220: 10.0.3.103:48278 -> default/web1-696bfbbbc4-jnxbc:80 to-endpoint FORWARDED (TCP Flags: SYN)
@@ -332,13 +332,13 @@ Oct 31 15:56:12.749: 10.0.4.105:36956 -> default/web1-696bfbbbc4-jnxbc:80 to-end
 Oct 31 15:56:12.749: default/web1-696bfbbbc4-jnxbc:80 <> 10.0.4.105:36956 to-overlay FORWARDED (TCP Flags: ACK, FIN)
 ```
 
-What happens here is, that our router sent the traffic for ip address 172.16.10.0 to k8s-worker1, but that worker does not host our *web1* container, so it forwards the traffic to k8s-worker2 and that worker handles the traffic. All the forwarding logic is handled using [eBPF](https://docs.cilium.io/en/stable/concepts/ebpf/intro/), so a small BPF program attached to the interface handles the traffic and routes in to an other worker if needed. That is also the reason that running `tcpdump` on k8s-worker1 where the packages initialy are recieved, do not show any traffic. It is already redirected to k8s-worker2 before it could land in the ip stack of k8s-worker1.
+What we see here is that our router is sending the traffic for ip address 172.16.10.0 to k8s-worker1, but that worker does not host our web1 container, so it forwards the traffic to k8s-worker2 which handles the traffic. All the forwarding logic is handled using [eBPF](https://docs.cilium.io/en/stable/concepts/ebpf/intro/) – a small BPF program attached to the interface will send the traffic and routes to another worker if needed. That is also the reason that running tcpdump on k8s-worker1,  where the packages initially are received, does not show any traffic. It is already redirected to k8s-worker2 before it could land in the ip stack of k8s-worker1.
 
-At Cilium they have a lot of information about eBPF and the internals, if you not have heard about eBPF and are into Linux and/or networking, please do yourself a favor and learn at least the basics, because in my humble opinion eBPF will change networking in Linux drasticly in the near future and especially for cloud native environments.
+[Cilium.io](https://cilium.io) has a lot of information about eBPF and the internals. If you have not heard about eBPF and you are into Linux and/or networking, please do yourself a favor and learn at least the basics. In my humble opinion eBPF will change networking in Linux drastically in the near future and especially for cloud native environments!
 
 
 #### Hubble Web GUI
-With a working BGP set-up, is very easy to also make the Hubble Web GUI available to the outside world.
+With a working BGP set-up, it is quite simple to make the Hubble Web GUI available to the outside world as well.
 
 ```lang=shell
 kubectl -n kube-system expose deployment hubble-ui --type=LoadBalancer --port=80 --target-port=8081 --name hubble-ui-lb
@@ -346,9 +346,7 @@ kubectl -n kube-system expose deployment hubble-ui --type=LoadBalancer --port=80
 
 ![]({{ site.baseurl }}/assets/cilium-bgp-hubble-default.png)
 
-## Conclusion
-Setting up Cilium combined with BGP is very easy with the integrated MetalLB and does not require expensive network hardware to set up. Cilium/BGP combined with the disabling of kube-proxy, lowers the latency to your cloud based services and gives an clear view of what is exposed to the outside world by only announcing the LoadBalancers ip addresses. And although not necessarily needed with this setup, I still would use an Ingress Controller like NGINX or Traefik, exposed by BGP of course, for most of my HTTP services, since those have great value at the protocol level, for example to rewrite URLs or ratelimit service requests.
+## Final words
+Due to the integrated MetalLB, it is very easy to set up Cilium with BGP. Plus, you don’t need expensive network hardware. Cilium/BGP, combined with the disabling of kube-proxy, lowers the latency to your cloud based Services and gives a clear view of what is exposed to the outside world by only announcing the LoadBalancers ip addresses.  Although an Ingress Controller is not required with this set-up, I still would recommend one for most HTTP Services. They have great value at the protocol level for rewriting URLs or rate limiting requests. Examples are NGINX or Traefik (exposed by BGP of course).
 
-It is very exiting to see that cloud native networking, but also networking within Linux is still improving.
-
-
+All in all, it is very exciting to see that cloud native networking, but also networking within Linux is still improving!
