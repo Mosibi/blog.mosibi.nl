@@ -303,6 +303,7 @@ rm hubble-linux-amd64.tar.gz{,.sha256sum}
 
 The following outputs show the observer information which is a result of the `curl http://172.16.10.0/` command on the router.
 
+```lang=shell
 $ hubble observe --namespace default --follow
 Oct 31 15:43:41.382: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: SYN)
 Oct 31 15:43:41.384: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK)
@@ -311,6 +312,7 @@ Oct 31 15:43:41.385: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-ov
 Oct 31 15:43:41.385: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK)
 Oct 31 15:43:41.386: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK, FIN)
 Oct 31 15:43:41.386: 192.168.1.1:36946 <> default/web1-696bfbbbc4-jnxbc:80 to-overlay FORWARDED (TCP Flags: ACK)
+```
 
 Before, I warned about not using the `hubble` command inside the Cilium agent pod, but it can also be very informative seeing the specific node traffic. In this case a `hubble observe --namespace default --follow` is executed within each Cilium agent pod and the curl from the router is once executed. On the node where the pod is 'living' (k8s-worker2), we see the same output as the one above, However on another pod (k8s-worker1) we see the following output:
 
